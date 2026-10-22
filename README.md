@@ -5,6 +5,8 @@
 A **multi-tenant invoicing SaaS API**: organizations, team members with roles, clients and invoices —
 with tenant isolation enforced twice, in the application *and* in PostgreSQL with **Row-Level Security**.
 
+![A user from one company gets a 404 when requesting another company's invoice, and all 43 tests pass](docs/demo.png)
+
 ## Security design
 
 Multi-tenancy bugs are among the most damaging in SaaS: one missing `WHERE org_id = ...` and
