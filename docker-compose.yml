@@ -1,0 +1,28 @@
+# docker compose up --build   →   API on http://localhost:4000
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tenantdesk"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgres://tenantdesk:tenantdesk@db:5432/tenantdesk
+      # Local development only. In production, inject a real secret.
+      JWT_SECRET: local-dev-secret-local-dev-secret-0001
+    ports: ["4000:4000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:

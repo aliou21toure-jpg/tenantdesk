@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://tenantdesk:tenantdesk@localhost:5432/tenantdesk_test
+      JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+      LOG_LEVEL: silent
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create non-superuser app role (needed for Row-Level Security)
+        run: psql postgres://postgres:postgres@localhost:5432/postgres -f docker/init-db.sql
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx tsx scripts/migrate.ts
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tenantdesk .

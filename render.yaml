@@ -1,0 +1,16 @@
+# Render Blueprint. The managed database user is not a superuser, so Row-Level Security applies.
+databases:
+  - name: tenantdesk-db
+    databaseName: tenantdesk
+    user: tenantdesk
+
+services:
+  - type: web
+    name: tenantdesk-api
+    runtime: docker
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: { name: tenantdesk-db, property: connectionString }
+      - key: JWT_SECRET
+        generateValue: true   # Render generates a random secret; never commit one
